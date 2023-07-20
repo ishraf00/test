@@ -1,29 +1,44 @@
 import socket
 
+MIN_PRESSURE = 0.0
+MAX_PRESSURE = 100.0
+STANDARD_ATMOSPHERE = 1.01325
+
+def convert_pressure_to_atmosphere(pressure):
+    return pressure / STANDARD_ATMOSPHERE
+
 def main():
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_host = '192.168.10.130'  # Server IP address (loopback in this case)
-    server_port = 8888        # Server port number
+    server_port = 8888        # Choose any available port number
 
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client_socket.connect((server_host, server_port))
+    server_socket.bind((server_host, server_port))
+    server_socket.listen(5)
 
-    try:
-        # Get user input for pressure in bar
-        pressure = float(input("Enter pressure in bar: "))
+    print(f"Server listening on {server_host}:{server_port} ...")
 
-        # Send pressure to the server
-        client_socket.sendall(str(pressure).encode())
+    while True:
+        try:
+            client_socket, client_address = server_socket.accept()
+            print(f"Client connected: {client_address}")
 
-        # Receive and display the converted pressure in atmosphere-standard from the server
-        response = client_socket.recv(1024).decode()
-        print("Received converted pressure:", response)
+            # Receive pressure from the client
+            data = client_socket.recv(1024)
+            pressure = float(data.decode().strip())
 
-    except ValueError:
-        print("Invalid input. Please enter a valid pressure value.")
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        client_socket.close()
+            # Check if the received pressure is within valid range
+            if MIN_PRESSURE <= pressure <= MAX_PRESSURE:
+                converted_pressure = convert_pressure_to_atmosphere(pressure)
+                response = f"{converted_pressure:.2f} atmosphere-standard"
+            else:
+                response = "Invalid pressure. Please provide a pressure value between 0.0 and 100.0 bar."
+
+            # Send the converted pressure back to the client
+            client_socket.sendall(response.encode())
+        except Exception as e:
+            print(f"Error: {e}")
+        finally:
+            client_socket.close()
 
 if __name__ == "__main__":
     main()
