@@ -1,0 +1,26 @@
+import socket
+
+def main():
+    # Server configurations
+    host = "192.168.10.130"
+    port = 8888
+
+    # Create a socket object
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+    try:
+        # Connect to the server
+        client_socket.connect((host, port))
+        print(f"[*] Connected to {host}:{port}")
+
+        # Receive the quote from the server (up to 4096 bytes)
+        quote = client_socket.recv(4096).decode()
+
+        print(f"Quote of the day: {quote}")
+    except ConnectionRefusedError:
+        print("[!] Connection refused. Make sure the server is running.")
+    finally:
+        client_socket.close()
+
+if __name__ == "__main__":
+    main()
